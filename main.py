@@ -156,39 +156,14 @@ def predict_rank():
         return jsonify({"error": "Model not loaded or trained. Please restart the server."}), 500
 
     try:
-        # Combine user's 2500 scores with the simulated data for a more accurate prediction context
-        # This will retrain the scalers and model based on the *combined* dataset for each request.
-        # For production, you might want to pre-train a robust model and only use user_scores_list
-        # for context/fine-tuning if the model supports it, or simply rely on the base model.
-        # For simplicity and to incorporate the user's data as requested, we'll re-simulate/re-scale.
-        # NOTE: Re-training the model on every request with a large dataset (200k) will be slow.
-        # A better approach for production is to train the model once with a representative dataset
-        # (including your 2500 scores if they are fixed and representative) and then just use
-        # the loaded model for predictions.
-        # For this example, we'll simulate the combined dataset for each request to show the concept.
-        
         # To avoid retraining the RandomForestRegressor on every request (which is slow),
         # we will use the pre-loaded/pre-trained global model and scalers.
-        # The `user_scores_list` will be used as a *context* for the prediction,
-        # but the model itself won't be retrained on it for every request.
-        # If the user's scores are meant to *update* the model's understanding,
-        # that's a different, more complex scenario (e.g., online learning or periodic retraining).
-        # For a simple API, we assume the model's base knowledge is sufficient.
-
-        # The `simulate_jee_data` function was designed to integrate existing scores for training.
-        # If we want to use the pre-trained model, we can't retrain it on the fly with `user_scores_list`.
-        # The most practical way to incorporate `user_scores_list` for *prediction context*
-        # without retraining the model on every request is to use it to refine the *scaling*
-        # or to select a more appropriate pre-trained model (if multiple exist).
-        # Given the current model structure, the `user_scores_list` is best used during the
-        # *initial training phase* if it's a fixed dataset.
-
-        # For this API, I will assume the `user_scores_list` is primarily for the *user's context*
+        # The `user_scores_list` is primarily for the *user's context*
         # and the pre-trained model (trained on TOTAL_STUDENTS simulated data) is used for prediction.
         # If your 2500 scores are static and representative, you should run the original
         # `jee_rank_predictor_script.py` once to train and save the model with those 2500 scores
         # included in the `simulate_jee_data` call during training.
-        # For this API, I'll use the globally loaded model.
+        # For this API, we'll use the globally loaded model.
 
         predicted_rank, best_case_rank, worst_case_rank = _predict_single_crl_rank(
             score_to_predict, model, score_scaler, rank_scaler
@@ -207,6 +182,7 @@ def predict_rank():
 
 # --- Run the Flask App ---
 if __name__ == '__main__':
-    # Replit automatically sets the host and port
-    # It uses 0.0.0.0 as host and the PORT environment variable
+    # Render uses the 'PORT' environment variable for web services.
+    # It's recommended to use a production-ready WSGI server like Gunicorn on Render.
+    # Your Render "Start Command" should be something like: gunicorn main:app
     app.run(host='0.0.0.0', port=os.environ.get('PORT', 5000))
